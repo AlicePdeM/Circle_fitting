@@ -1,0 +1,102 @@
+Welcome! 
+this documents explains how to use CF_GUI.py (Circle Fitting Graphical User Interface)
+
+# Prerequisite:
+In order for this program to work, you'll need some python modules, some of which are not by default on basic python installation. 
+
+numpy
+scipy
+matplotlib
+tkinter
+uncertainties
+re #for regular expresssion
+
+# How to launch:
+Just execute CF_GUI.py with a command similar to 
+
+python CF_GUI.py
+
+# Loading data
+
+To load data, go into the menubar -> Data -> load folder / load single file
+
+If it works, the temperatures corresponding to the loaded data will appear in the "Loaded Data" Listbox
+
+If it doesn't, it surely is because the format of the *name* of the file isn't recognize, or because it can"t read the file
+
+How to deal with it : go to menubar -> Data Parameters and select another naming patern
+
+"Classic" is for more recent file named like "0000_spectrum1_setTemp=1.400K_Power=-20dBm_actTemp=1.389K.dat"
+
+"Old" if for older file named like "Spectrum_50to20000MHz_001,599K.dat"
+
+If neither of these options works, then you need to go to temp_sweep_script.py and add a new patter to "Dico_regex"
+a pattern is composed of: 
+    - a regular expresssion "regex" capturing the temperature of the file and other informations if available, like the actual temperature
+(if you need help creating a new regex, I advise looking these two website https://www.geeksforgeeks.org/python/python-regex-cheat-sheet/ and https://regex101.com/)
+
+    - the number of capturing groups (as in the number of elements retrieved by the regex)
+    - the separator when reading the file
+
+# Looking at Data
+
+To look at certain curves, select the one you are interested in and press the return key, they should now appear in the Viewed Data Listbox 
+and the curves should appear
+
+If you want to remove from the viewing certain curves, select them in the Viewing Listbox and press the backspace key
+
+# Frequency span
+
+In order to Analyse a certain lorentzian in the data, the analysis code (in circle_fitting.py) needs some boundaries
+
+First, zoom on the lorentzian considered
+
+Then click on the Left span button to set the left boundary.
+
+Now, *Control* + click on the figure where you want the left boundary to be
+
+If you have not yet selected a right boundary, it will automatically render it posssible and you can add a right boundary
+
+If you want to change any boundary, just click on the corresponding button then *Control* click where you want to put it
+
+# Where to put boundaries? 
+
+Far enough from the lorentzian so there is enough data points, close enough so the general form of the curve can be considered flat (if not for the lorentzian)
+
+Basically, a window of 10 Delta f (width at mid heigth of the lorentzian) is ok, the circle fit will always resize the window afterwards
+
+# How to start the analysis?
+
+Select what you want to analyse next to the start button between the 3 choices
+
+- All data will analyse all loaded data
+- Viewed data will only analyse data that is currently being Viewed
+- Viewed data as T-bound will only analyse data (among all loaded data) 
+of which the temperature is between the lowest viewed temperature and the highest viewed
+This can be usefull with superconductor to only analyse below T_c
+
+
+#What are the two plot that are above the result?
+
+These are the surveillance plot, they will show different steps of the circle fitting algorithm and the fit performed.
+It should look like a circle on the left, and like an arctan on the left (and the fits should be ok too)
+If they are not okay, there has been some issue with the fitting process and the result are to be taken with a grain of salt
+
+
+
+
+# Credit
+
+This code was written by Alice Pierron de Mondésir (alice.pierron28@yahoo.com)
+
+The circle fit was written by Alice based on 
+
+"Efficient and robust analysis of complex scattering data under noise
+in microwave resonators
+S. Probst ,F. B. Song, P. A. Bushev, A. V. Ustinov, and M. Weides"
+
+and based on 
+"Circle fit optimization for resonator quality factor measurements:
+Point redistribution for maximal accuracy
+Paul G. Baity , Connor Maclean,  Valentino Seferai,  Joe Bronstein,  Yi Shu, 
+Tania Hemakumara, and Martin Weides "
