@@ -348,7 +348,20 @@ def save_result(event=None):
         )
 
 
+def clear_data_struct():
+    Data_struct.clear()
+    Data_struct_viewed.clear()
+    Update_Listboxes()
+    Update_View_Canvs()
+
+
 ######################################## Update fonctions ####################################
+
+
+def Reset_span():
+    Right_span.set(0)
+    Left_span.set(0)
+    Update_View_Span_lines()
 
 
 def Update_span_btn():
@@ -484,6 +497,7 @@ data_managment = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Data", menu=data_managment)
 data_managment.add_command(label="Load single file", command=import_file)
 data_managment.add_command(label="Load Folder", command=import_folder)
+data_managment.add_command(label="Unload everything", command=clear_data_struct)
 data_managment.add_separator()
 data_managment.add_command(label="Save Results as ", command=save_result)
 
