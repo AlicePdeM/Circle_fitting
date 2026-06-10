@@ -54,6 +54,8 @@ Surveillance_fig = Figure(figsize=(5, 4), dpi=100)
 Surveillance_ax = []
 Surveillance_ax.append(Surveillance_fig.add_axes([0, 0, 0.5, 1]))
 Surveillance_ax.append(Surveillance_fig.add_axes([0.5, 0, 0.5, 1]))
+Surveillance_ax[0].set_aspect("equal")
+
 
 Surveillance_canvas = FigureCanvasTkAgg(
     Surveillance_fig, master=root
@@ -449,22 +451,17 @@ def Update_Surveillancep1(x, y, x_c, y_c, r_c):
         lw=2,
         ls="--",
         c=Fit_color,
+        alpha=0.75,
     )
-    Surveillance_ax[0].scatter(x, y, c=Data_color, s=1, marker="x")
+    Surveillance_ax[0].scatter(x, y, c=Data_color, s=2, marker="x")
     Surveillance_canvas.draw()
 
 
 def Update_Surveillancep2(x, y, y_fit):
     Surveillance_ax[1].cla()
     Surveillance_ax[1].set_axis_off()
-    Surveillance_ax[1].plot(
-        x,
-        y_fit,
-        lw=2,
-        ls="--",
-        c=Fit_color,
-    )
-    Surveillance_ax[1].scatter(x, y, c=Data_color, s=1, marker="x")
+    Surveillance_ax[1].plot(x, y_fit, lw=2, ls="--", c=Fit_color, alpha=0.75)
+    Surveillance_ax[1].scatter(x, y, c=Data_color, s=2, marker="x")
     Surveillance_canvas.draw()
 
 
