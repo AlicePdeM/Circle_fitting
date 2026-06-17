@@ -359,16 +359,30 @@ def import_folder():
 
 
 def save_result(event=None):
-    file_path = filedialog.asksaveasfilename(
-        title="Select a save file", filetypes=[("CSV", "*.csv"), ("Any", "*.*")]
-    )
-    if file_path:
-        np.savetxt(
-            file_path,
-            Result_array,
-            delimiter=",",
-            header="0:T,1:a,2:u_a,3:alpha,4:u_alpha,5:tau,6:u_tau,7:q,8:u_q,9:q_c,10:u_q_c,11:phi,12:u_phi,13:f,14:u_f,15:q_i,16:u_q_i",
+
+    if not Double_Lor_bool.get():
+        file_path = filedialog.asksaveasfilename(
+            title="Select a save file", filetypes=[("CSV", "*.csv"), ("Any", "*.*")]
         )
+        if file_path:
+            np.savetxt(
+                file_path,
+                Result_array[0],
+                delimiter=",",
+                header="0:T,1:a,2:u_a,3:alpha,4:u_alpha,5:tau,6:u_tau,7:q,8:u_q,9:q_c,10:u_q_c,11:phi,12:u_phi,13:f,14:u_f,15:q_i,16:u_q_i",
+            )
+    else:
+        for i in range(n_peaks):
+            file_path = filedialog.asksaveasfilename(
+                title="Select a save file", filetypes=[("CSV", "*.csv"), ("Any", "*.*")]
+            )
+        if file_path:
+            np.savetxt(
+                file_path,
+                Result_array[i],
+                delimiter=",",
+                header="0:T,1:a,2:u_a,3:alpha,4:u_alpha,5:tau,6:u_tau,7:q,8:u_q,9:q_c,10:u_q_c,11:phi,12:u_phi,13:f,14:u_f,15:q_i,16:u_q_i",
+            )
 
 
 ######################################## Update fonctions ####################################
