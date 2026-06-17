@@ -54,8 +54,6 @@ Surveillance_fig = Figure(figsize=(5, 4), dpi=100)
 Surveillance_ax = []
 Surveillance_ax.append(Surveillance_fig.add_axes([0, 0, 0.5, 1]))
 Surveillance_ax.append(Surveillance_fig.add_axes([0.5, 0, 0.5, 1]))
-Surveillance_ax[0].set_aspect("equal")
-
 
 Surveillance_canvas = FigureCanvasTkAgg(
     Surveillance_fig, master=root
@@ -348,20 +346,7 @@ def save_result(event=None):
         )
 
 
-def clear_data_struct():
-    Data_struct.clear()
-    Data_struct_viewed.clear()
-    Update_Listboxes()
-    Update_View_Canvs()
-
-
 ######################################## Update fonctions ####################################
-
-
-def Reset_span():
-    Right_span.set(0)
-    Left_span.set(0)
-    Update_View_Span_lines()
 
 
 def Update_span_btn():
@@ -464,17 +449,22 @@ def Update_Surveillancep1(x, y, x_c, y_c, r_c):
         lw=2,
         ls="--",
         c=Fit_color,
-        alpha=0.75,
     )
-    Surveillance_ax[0].scatter(x, y, c=Data_color, s=2, marker="x")
+    Surveillance_ax[0].scatter(x, y, c=Data_color, s=1, marker="x")
     Surveillance_canvas.draw()
 
 
 def Update_Surveillancep2(x, y, y_fit):
     Surveillance_ax[1].cla()
     Surveillance_ax[1].set_axis_off()
-    Surveillance_ax[1].plot(x, y_fit, lw=2, ls="--", c=Fit_color, alpha=0.75)
-    Surveillance_ax[1].scatter(x, y, c=Data_color, s=2, marker="x")
+    Surveillance_ax[1].plot(
+        x,
+        y_fit,
+        lw=2,
+        ls="--",
+        c=Fit_color,
+    )
+    Surveillance_ax[1].scatter(x, y, c=Data_color, s=1, marker="x")
     Surveillance_canvas.draw()
 
 
@@ -497,7 +487,6 @@ data_managment = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Data", menu=data_managment)
 data_managment.add_command(label="Load single file", command=import_file)
 data_managment.add_command(label="Load Folder", command=import_folder)
-data_managment.add_command(label="Unload everything", command=clear_data_struct)
 data_managment.add_separator()
 data_managment.add_command(label="Save Results as ", command=save_result)
 
@@ -507,6 +496,9 @@ for regex_possibilities in tss.Dico_regex.keys():
     data_parameters.add_radiobutton(
         label=regex_possibilities, value=regex_possibilities, variable=file_type
     )
+
+analysis_parameters = tk.Menu(menubar, tearoff=0)
+menubar.add_cascade(label="Analysis +", menu=analysis_parameters)
 
 
 root.config(menu=menubar)
