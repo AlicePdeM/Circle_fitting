@@ -7,6 +7,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.backend_bases import key_press_handler
 from threading import Thread
 
+from scipy.signal import find_peaks, peak_prominences
+
 import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -26,6 +28,8 @@ Left_color = "#01ca94"
 Right_color = "#ce2b72"
 Data_color = "#5ab039"
 Fit_color = "#be5203"
+
+n_peaks = 2
 
 ####### IMPORTANT #########
 
@@ -90,13 +94,20 @@ Line_right = View_ax.axvline(Right_span.get(), lw=1, ls="--", c=Right_color)
 
 Analysis_selector = tk.IntVar(root, 0)
 
+
+Double_Lor_bool = tk.BooleanVar(root, False)
+
+peaks_result_show_bool = [tk.BooleanVar(root, False) for i in range(n_peaks)]
+peaks_result_show_bool[0].set(True)
+
+
 # Analysis variables to trace and eventually export
 L_T = []
 L_Q = ([], [])
 L_Q_i = ([], [])
 L_Q_c = ([], [])
 
-Result_array = np.array([])
+Result_array = [np.array([]) for i in range(n_peaks)]
 
 View_Q_Bool = tk.BooleanVar(root, True)
 View_Q_i_Bool = tk.BooleanVar(root, False)
@@ -199,6 +210,7 @@ def analysis_threaded():
         f = np.array([])
         x = np.array([])
         y = np.array([])
+        S = np.array([])
         for identifier, info in Data_struct[T].items():
             data = np.loadtxt(
                 info[0], skiprows=1, delimiter=tss.Dico_regex[file_type.get()][2]
@@ -207,40 +219,59 @@ def analysis_threaded():
             f = np.append(f, data[:, 0])
             x = np.append(x, data[:, 1])
             y = np.append(y, data[:, 2])
-        # print(f)
-        selection_mask = (f > Left_span.get()) & (f < Right_span.get())
-        # print(Left_span.get(), Right_span.get())
-        # print(f[selection_mask])
-        # print(
-        #    np.shape(f[selection_mask]),
-        #    np.shape(x[selection_mask]),
-        #    np.shape(y[selection_mask]),
-        # )
-        res, Surp1, Surp2 = cf.lor_circle_fit(
-            f[selection_mask],
-            x[selection_mask],
-            y[selection_mask],
-            pre_calc_tau=Estimated_tau.get(),
-        )
-        Update_Surveillancep1(*Surp1)
-        Update_Surveillancep2(*Surp2)
-        progress["value"] = int(100 * (i + 1) / len(List_of_temp))
-        # print(res, type(res))
-        L_T.append(T)
-        L_Q[0].append(res[0, 3])
-        L_Q[1].append(res[1, 3])
-        L_Q_c[0].append(res[0, 4])
-        L_Q_c[1].append(res[1, 4])
-        L_Q_i[0].append(res[0, 7])
-        L_Q_i[1].append(res[1, 7])
+            S = np.append(S, data[:, 3])
 
-        cleaned_res = np.insert(res.flatten("F"), 0, T)
-        Estimated_tau.set(cleaned_res[5])
-        print(Estimated_tau.get())
-        if not Result_array.size:
-            Result_array = np.copy(cleaned_res)
-        else:
-            Result_array = np.vstack((Result_array, cleaned_res))
+        selection_mask = (f > Left_span.get()) & (f < Right_span.get())
+
+        masks = [selection_mask]
+
+        if Double_Lor_bool.get():
+            f_temp = f[selection_mask]
+            S_temp = S[selection_mask]
+
+            peak_indices, _ = find_peaks(-S_temp)
+
+            peak_prominence = peak_prominences(-S_temp, peak_indices)[0]
+            ind = np.argsort(-peak_prominence)
+            p1 = f_temp[peak_indices[ind[0]]]
+            p2 = f_temp[peak_indices[ind[1]]]
+
+            if p1 > p2:
+                t = p2
+                p2 = p1
+                p1 = p2
+
+            tresh1 = p1 + (p2 - p1) / 3
+            tresh2 = p2 - (p2 - p1) / 3
+
+            print(f"detected peaks : {p1}, {p2}")
+
+            masks = [selection_mask & (f < tresh1), selection_mask & (f > tresh2)]
+
+        for j in range(n_peaks):
+
+            if j == 0 or (j > 0 and Double_Lor_bool.get()):
+
+                res, Surp1, Surp2 = cf.lor_circle_fit(
+                    f[masks[j]],
+                    x[masks[j]],
+                    y[masks[j]],
+                    pre_calc_tau=Estimated_tau.get(),
+                )
+                Update_Surveillancep1(*Surp1)
+                Update_Surveillancep2(*Surp2)
+                progress["value"] = int(
+                    100 * (i * n_peaks + j + 1) / (len(List_of_temp) * n_peaks)
+                )
+                # print(res, type(res))
+
+                cleaned_res = np.insert(res.flatten("F"), 0, T)
+                Estimated_tau.set(cleaned_res[5])
+                print(Estimated_tau.get())
+                if not Result_array[j].size:
+                    Result_array[j] = np.copy(cleaned_res)
+                else:
+                    Result_array[j] = np.vstack((Result_array[j], cleaned_res))
 
         Update_Result_Canvs()
 
@@ -265,15 +296,9 @@ def get_tau():
 
 def Clear_analysis():
     global Result_array
-    Result_array = np.array([])
+    Result_array = [np.array([]) for i in range(n_peaks)]
     progress["value"] = 0
-    L_T.clear()
-    L_Q[0].clear()
-    L_Q[1].clear()
-    L_Q_c[0].clear()
-    L_Q_c[1].clear()
-    L_Q_i[0].clear()
-    L_Q_i[1].clear()
+
     Update_Result_Canvs()
 
 
@@ -402,39 +427,63 @@ def Update_Listboxes():
     View_Data_variable.set(list(Data_struct_viewed.keys()))
 
 
+def show1D_errorbars(ax, data, iy, label, ix=0):
+    ax.errorbar(
+        data[ix],
+        data[iy],
+        yerr=data[iy + 1],
+        ls="",
+        label=label,
+        elinewidth=1,
+        capsize=2,
+    )
+
+
+def show2D_errorbars(ax, data, iy, label, ix=0):
+    ax.errorbar(
+        data[:, ix],
+        data[:, iy],
+        yerr=data[:, iy + 1],
+        ls="",
+        label=label,
+        elinewidth=1,
+        capsize=2,
+    )
+
+
 def Update_Result_Canvs():
     Result_ax.cla()
+    for i, peaks_bool in enumerate(peaks_result_show_bool):
+        if peaks_bool.get():
+            if View_Q_Bool.get():
+                if Result_array[i].ndim == 1:
+                    show1D_errorbars(
+                        Result_ax, Result_array[i], 7, f"Global Quality ({i})"
+                    )
+                else:
+                    show2D_errorbars(
+                        Result_ax, Result_array[i], 7, f"Global Quality ({i})"
+                    )
 
-    if View_Q_Bool.get():
-        Result_ax.errorbar(
-            L_T,
-            L_Q[0],
-            yerr=L_Q[1],
-            ls="",
-            label="Global Quality",
-            elinewidth=1,
-            capsize=2,
-        )
-    if View_Q_c_Bool.get():
-        Result_ax.errorbar(
-            L_T,
-            L_Q_c[0],
-            yerr=L_Q_c[1],
-            ls="",
-            label="Coupling Quality",
-            elinewidth=1,
-            capsize=2,
-        )
-    if View_Q_i_Bool.get():
-        Result_ax.errorbar(
-            L_T,
-            L_Q_i[0],
-            yerr=L_Q_i[1],
-            ls="",
-            label="Internal Quality",
-            elinewidth=1,
-            capsize=2,
-        )
+            if View_Q_c_Bool.get():
+                if Result_array[i].ndim == 1:
+                    show1D_errorbars(
+                        Result_ax, Result_array[i], 9, f"Coupling Factor ({i})"
+                    )
+                else:
+                    show2D_errorbars(
+                        Result_ax, Result_array[i], 9, f"Coupling Factor ({i})"
+                    )
+
+            if View_Q_i_Bool.get():
+                if Result_array[i].ndim == 1:
+                    show1D_errorbars(
+                        Result_ax, Result_array[i], 15, f"Internal Quality ({i})"
+                    )
+                else:
+                    show2D_errorbars(
+                        Result_ax, Result_array[i], 15, f"Internal Quality ({i})"
+                    )
     Result_ax.legend()
 
     Result_canvas.draw()
@@ -499,6 +548,16 @@ for regex_possibilities in tss.Dico_regex.keys():
 
 analysis_parameters = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Analysis +", menu=analysis_parameters)
+analysis_parameters.add_checkbutton(
+    label="Multiple Peaks Analysis", variable=Double_Lor_bool
+)
+analysis_parameters.add_separator()
+for i, peaks_bool in enumerate(peaks_result_show_bool):
+    analysis_parameters.add_checkbutton(
+        label=f"show result for peak n°{i}",
+        variable=peaks_bool,
+        command=Update_Result_Canvs,
+    )
 
 
 root.config(menu=menubar)
