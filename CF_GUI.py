@@ -32,6 +32,10 @@ Fit_color = "#be5203"
 
 n_peaks = 2
 
+# This number is the power of ten corresponding to the usual values of frequencies (or X) used
+
+working_power = 1e9
+
 ####### IMPORTANT #########
 
 
@@ -358,7 +362,10 @@ def save_result(event=None):
 
     if not Double_Lor_bool.get():
         file_path = filedialog.asksaveasfilename(
-            title="Select a save file", filetypes=[("CSV", "*.csv"), ("Any", "*.*")]
+            title="Select a save file",
+            filetypes=[("CSV", "*.csv"), ("Any", "*.*")],
+            defaultextension=".csv",
+            initialfile=f"cf_{Result_array[0][0,13]/working_power:.3f}",
         )
         if file_path:
             np.savetxt(
@@ -370,7 +377,10 @@ def save_result(event=None):
     else:
         for i in range(n_peaks):
             file_path = filedialog.asksaveasfilename(
-                title="Select a save file", filetypes=[("CSV", "*.csv"), ("Any", "*.*")]
+                title="Select a save file",
+                filetypes=[("CSV", "*.csv"), ("Any", "*.*")],
+                defaultextension=".csv",
+                initialfile=f"cf_{Result_array[i][0,13]/working_power:.3f}",
             )
             if file_path:
                 np.savetxt(
