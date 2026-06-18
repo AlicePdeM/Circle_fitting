@@ -344,9 +344,7 @@ def import_file():
 
 
 def import_folder():
-    folder_path = filedialog.askdirectory(
-        title="Select a data folder",
-    )
+    folder_path = filedialog.askdirectory(title="Select a data folder")
     if folder_path:
         # print(folder_path)
         tss.load_folder_on_DS(
@@ -374,13 +372,13 @@ def save_result(event=None):
             file_path = filedialog.asksaveasfilename(
                 title="Select a save file", filetypes=[("CSV", "*.csv"), ("Any", "*.*")]
             )
-        if file_path:
-            np.savetxt(
-                file_path,
-                Result_array[i],
-                delimiter=",",
-                header="0:T,1:a,2:u_a,3:alpha,4:u_alpha,5:tau,6:u_tau,7:q,8:u_q,9:q_c,10:u_q_c,11:phi,12:u_phi,13:f,14:u_f,15:q_i,16:u_q_i",
-            )
+            if file_path:
+                np.savetxt(
+                    file_path,
+                    Result_array[i],
+                    delimiter=",",
+                    header="0:T,1:a,2:u_a,3:alpha,4:u_alpha,5:tau,6:u_tau,7:q,8:u_q,9:q_c,10:u_q_c,11:phi,12:u_phi,13:f,14:u_f,15:q_i,16:u_q_i",
+                )
 
 
 def unload_all():
