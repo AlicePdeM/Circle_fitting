@@ -102,10 +102,7 @@ peaks_result_show_bool[0].set(True)
 
 
 # Analysis variables to trace and eventually export
-L_T = []
-L_Q = ([], [])
-L_Q_i = ([], [])
-L_Q_c = ([], [])
+
 
 Result_array = [np.array([]) for i in range(n_peaks)]
 
@@ -385,6 +382,15 @@ def save_result(event=None):
             )
 
 
+def unload_all():
+    Data_struct.clear()
+    Data_struct_viewed.clear()
+    Update_Listboxes()
+    Right_span.set(0)
+    Left_span.set(0)
+    Update_View_Canvs()
+
+
 ######################################## Update fonctions ####################################
 
 
@@ -552,6 +558,7 @@ data_managment.add_command(label="Load single file", command=import_file)
 data_managment.add_command(label="Load Folder", command=import_folder)
 data_managment.add_separator()
 data_managment.add_command(label="Save Results as ", command=save_result)
+data_managment.add_command(label="Unload all Data", command=unload_all)
 
 data_parameters = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Data Parameters", menu=data_parameters)
