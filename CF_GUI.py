@@ -13,6 +13,7 @@ import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
+from tkinter.messagebox import askyesno
 
 plt.rcParams["axes.grid"] = True
 plt.rcParams["grid.linestyle"] = "--"
@@ -383,12 +384,14 @@ def save_result(event=None):
 
 
 def unload_all():
-    Data_struct.clear()
-    Data_struct_viewed.clear()
-    Update_Listboxes()
-    Right_span.set(0)
-    Left_span.set(0)
-    Update_View_Canvs()
+    answer = askyesno("Unload all", "Are you sure you want to unload all data ?")
+    if answer:
+        Data_struct.clear()
+        Data_struct_viewed.clear()
+        Update_Listboxes()
+        Right_span.set(0)
+        Left_span.set(0)
+        Update_View_Canvs()
 
 
 ######################################## Update fonctions ####################################
@@ -557,8 +560,10 @@ menubar.add_cascade(label="Data", menu=data_managment)
 data_managment.add_command(label="Load single file", command=import_file)
 data_managment.add_command(label="Load Folder", command=import_folder)
 data_managment.add_separator()
-data_managment.add_command(label="Save Results as ", command=save_result)
 data_managment.add_command(label="Unload all Data", command=unload_all)
+data_managment.add_separator()
+data_managment.add_command(label="Save Results as ", command=save_result)
+
 
 data_parameters = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Data Parameters", menu=data_parameters)
