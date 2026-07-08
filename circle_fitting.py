@@ -159,7 +159,7 @@ def rough_resonnance(f, S: np.ndarray):
     half_heigth = (base_level + np.min(absS)) / 2
 
     i_ref = absS.tolist().index(min(absS))
-    print(i_ref)
+    # print(i_ref)
 
     i_bef = np.where(
         absS == min(absS[f < f_r_estimate], key=lambda u: abs(u - half_heigth))

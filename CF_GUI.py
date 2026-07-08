@@ -1,10 +1,11 @@
 import circle_fitting as cf
 import temp_sweep_script as tss
+import double_trouble as dt
+
 
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.backend_bases import key_press_handler
 from threading import Thread
 
 from scipy.signal import find_peaks, peak_prominences
@@ -100,11 +101,13 @@ Line_right = View_ax.axvline(Right_span.get(), lw=1, ls="--", c=Right_color)
 Analysis_selector = tk.IntVar(root, 0)
 
 
-Double_Lor_bool = tk.BooleanVar(root, False)
+Double_Lor_selector = tk.IntVar(root, 0)
 
 peaks_result_show_bool = [tk.BooleanVar(root, False) for i in range(n_peaks)]
 peaks_result_show_bool[0].set(True)
 
+
+Dico_multipeaks_kind = {"None": 0, "Separate": 1, "Double lorentzian": 2}
 
 # Analysis variables to trace and eventually export
 
@@ -190,6 +193,73 @@ def Start_analysis():
     t.start()
 
 
+def analysis_simple(T, f, x, y, S, k=0):
+    print(k, Double_Lor_selector.get())
+    global Result_array
+    res, Surp1, Surp2 = cf.lor_circle_fit(
+        f,
+        x,
+        y,
+        pre_calc_tau=Estimated_tau.get(),
+    )
+    Update_Surveillancep1(*Surp1)
+    Update_Surveillancep2(*Surp2)
+
+    # print(res, type(res))
+
+    cleaned_res = np.insert(res.flatten("F"), 0, T)
+    Estimated_tau.set(cleaned_res[5])
+    print(Estimated_tau.get())
+    if not Result_array[k].size:
+        Result_array[k] = np.copy(cleaned_res)
+    else:
+        Result_array[k] = np.vstack((Result_array[k], cleaned_res))
+
+
+def analysis_separated(T, f, x, y, S):
+
+    peak_indices, _ = find_peaks(-S)
+
+    peak_prominence = peak_prominences(-S, peak_indices)[0]
+    ind = np.argsort(-peak_prominence)
+    p1 = f[peak_indices[ind[0]]]
+    p2 = f[peak_indices[ind[1]]]
+
+    if p1 > p2:
+        t = p2
+        p2 = p1
+        p1 = p2
+
+    tresh1 = p1 + (p2 - p1) / 3
+    tresh2 = p2 - (p2 - p1) / 3
+
+    print(f"detected peaks : {p1}, {p2}")
+
+    masks = [(f < tresh1), (f > tresh2)]
+    for i, mask in enumerate(masks):
+        analysis_simple(T, f[mask], S[mask], x[mask], y[mask], i)
+
+
+def analysis_double(T, f, x, y, S):
+
+    global Result_array
+    Lres, Surp1, Surp2 = dt.double_trouble(f, x, y, S)
+    Update_Surveillancep1(*Surp1)
+    Update_Surveillancep2(*Surp2)
+    fr_list = []
+    for i, res in enumerate(Lres):
+        cleaned_res = np.insert(res.flatten("F"), 0, T)
+
+        fr_list.append(cleaned_res[13])
+        Estimated_tau.set(cleaned_res[5])
+        # print(Estimated_tau.get())
+        if not Result_array[i].size:
+            Result_array[i] = np.copy(cleaned_res)
+        else:
+            Result_array[i] = np.vstack((Result_array[i], cleaned_res))
+    print(fr_list)
+
+
 def analysis_threaded():
     global Result_array
     progress["value"] = 0
@@ -225,55 +295,34 @@ def analysis_threaded():
 
         selection_mask = (f > Left_span.get()) & (f < Right_span.get())
 
-        masks = [selection_mask]
+        analysis_kind = Double_Lor_selector.get()
 
-        if Double_Lor_bool.get():
-            f_temp = f[selection_mask]
-            S_temp = S[selection_mask]
+        if analysis_kind == 1:
+            analysis_separated(
+                T,
+                f[selection_mask],
+                x[selection_mask],
+                y[selection_mask],
+                S[selection_mask],
+            )
+        elif analysis_kind == 2:
+            analysis_double(
+                T,
+                f[selection_mask],
+                x[selection_mask],
+                y[selection_mask],
+                S[selection_mask],
+            )
+        else:
+            analysis_simple(
+                T,
+                f[selection_mask],
+                x[selection_mask],
+                y[selection_mask],
+                S[selection_mask],
+            )
 
-            peak_indices, _ = find_peaks(-S_temp)
-
-            peak_prominence = peak_prominences(-S_temp, peak_indices)[0]
-            ind = np.argsort(-peak_prominence)
-            p1 = f_temp[peak_indices[ind[0]]]
-            p2 = f_temp[peak_indices[ind[1]]]
-
-            if p1 > p2:
-                t = p2
-                p2 = p1
-                p1 = p2
-
-            tresh1 = p1 + (p2 - p1) / 3
-            tresh2 = p2 - (p2 - p1) / 3
-
-            print(f"detected peaks : {p1}, {p2}")
-
-            masks = [selection_mask & (f < tresh1), selection_mask & (f > tresh2)]
-
-        for j in range(n_peaks):
-
-            if j == 0 or (j > 0 and Double_Lor_bool.get()):
-
-                res, Surp1, Surp2 = cf.lor_circle_fit(
-                    f[masks[j]],
-                    x[masks[j]],
-                    y[masks[j]],
-                    pre_calc_tau=Estimated_tau.get(),
-                )
-                Update_Surveillancep1(*Surp1)
-                Update_Surveillancep2(*Surp2)
-                progress["value"] = int(
-                    100 * (i * n_peaks + j + 1) / (len(List_of_temp) * n_peaks)
-                )
-                # print(res, type(res))
-
-                cleaned_res = np.insert(res.flatten("F"), 0, T)
-                Estimated_tau.set(cleaned_res[5])
-                print(Estimated_tau.get())
-                if not Result_array[j].size:
-                    Result_array[j] = np.copy(cleaned_res)
-                else:
-                    Result_array[j] = np.vstack((Result_array[j], cleaned_res))
+        progress["value"] = int(100 * (i + 1) / (len(List_of_temp)))
 
         Update_Result_Canvs()
 
@@ -360,7 +409,7 @@ def import_folder():
 
 def save_result(event=None):
 
-    if not Double_Lor_bool.get():
+    if not Double_Lor_selector.get():
         file_path = filedialog.asksaveasfilename(
             title="Select a save file",
             filetypes=[("CSV", "*.csv"), ("Any", "*.*")],
@@ -582,9 +631,14 @@ for regex_possibilities in tss.Dico_regex.keys():
 
 analysis_parameters = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Analysis +", menu=analysis_parameters)
-analysis_parameters.add_checkbutton(
-    label="Multiple Peaks Analysis", variable=Double_Lor_bool
-)
+
+
+analysis_parameters.add_command(label="Analysis of double lorentzian kind :")
+for double_analysis_kind, val_int in Dico_multipeaks_kind.items():
+    analysis_parameters.add_radiobutton(
+        label=double_analysis_kind, value=val_int, variable=Double_Lor_selector
+    )
+
 analysis_parameters.add_separator()
 for i, peaks_bool in enumerate(peaks_result_show_bool):
     analysis_parameters.add_checkbutton(
