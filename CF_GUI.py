@@ -107,7 +107,12 @@ peaks_result_show_bool = [tk.BooleanVar(root, False) for i in range(n_peaks)]
 peaks_result_show_bool[0].set(True)
 
 
-Dico_multipeaks_kind = {"None": 0, "Separate": 1, "Double lorentzian": 2}
+Dico_multipeaks_kind = {
+    "None": 0,
+    "Separate": 1,
+    "Double lorentzian": 2,
+    "True Double lorentzian": 3,
+}
 
 # Analysis variables to trace and eventually export
 
@@ -260,6 +265,26 @@ def analysis_double(T, f, x, y, S):
     print(fr_list)
 
 
+def analysis_true_double(T, f, x, y, S):
+
+    global Result_array
+    Lres, Surp1, Surp2 = dt.true_double_trouble(f, x, y, S)
+    Update_Surveillancep1(*Surp1)
+    Update_Surveillancep2(*Surp2)
+    fr_list = []
+    for i, res in enumerate(Lres):
+        cleaned_res = np.insert(res.flatten("F"), 0, T)
+
+        fr_list.append(cleaned_res[13])
+        Estimated_tau.set(cleaned_res[5])
+        # print(Estimated_tau.get())
+        if not Result_array[i].size:
+            Result_array[i] = np.copy(cleaned_res)
+        else:
+            Result_array[i] = np.vstack((Result_array[i], cleaned_res))
+    print(fr_list)
+
+
 def analysis_threaded():
     global Result_array
     progress["value"] = 0
@@ -307,6 +332,14 @@ def analysis_threaded():
             )
         elif analysis_kind == 2:
             analysis_double(
+                T,
+                f[selection_mask],
+                x[selection_mask],
+                y[selection_mask],
+                S[selection_mask],
+            )
+        elif analysis_kind == 3:
+            analysis_true_double(
                 T,
                 f[selection_mask],
                 x[selection_mask],
