@@ -308,8 +308,8 @@ def true_double_trouble(f, x, y, S):
     Res2 = np.array(
         [
             [
+                popt[7],
                 popt[8],
-                popt[9],
                 tau,
                 unp.nominal_values(u_q[1]),
                 popt[1],
@@ -318,8 +318,8 @@ def true_double_trouble(f, x, y, S):
                 popt[3],
             ],
             [
+                pstd[7],
                 pstd[8],
-                pstd[9],
                 0,
                 unp.std_devs(u_q[1]),
                 pstd[1],
