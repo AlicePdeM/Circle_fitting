@@ -108,11 +108,12 @@ peaks_result_show_bool[0].set(True)
 
 
 Dico_multipeaks_kind = {
-    "None": 0,
+    "Simple circle fit": 0,
     "Separate": 1,
     "Double lorentzian": 2,
     "True Double lorentzian": 3,
 }
+
 
 # Analysis variables to trace and eventually export
 
@@ -285,6 +286,14 @@ def analysis_true_double(T, f, x, y, S):
     print(fr_list)
 
 
+Dico_analysis_kind = {
+    0: analysis_simple,
+    1: analysis_separated,
+    2: analysis_double,
+    3: analysis_true_double,
+}
+
+
 def analysis_threaded():
     global Result_array
     progress["value"] = 0
@@ -322,38 +331,13 @@ def analysis_threaded():
 
         analysis_kind = Double_Lor_selector.get()
 
-        if analysis_kind == 1:
-            analysis_separated(
-                T,
-                f[selection_mask],
-                x[selection_mask],
-                y[selection_mask],
-                S[selection_mask],
-            )
-        elif analysis_kind == 2:
-            analysis_double(
-                T,
-                f[selection_mask],
-                x[selection_mask],
-                y[selection_mask],
-                S[selection_mask],
-            )
-        elif analysis_kind == 3:
-            analysis_true_double(
-                T,
-                f[selection_mask],
-                x[selection_mask],
-                y[selection_mask],
-                S[selection_mask],
-            )
-        else:
-            analysis_simple(
-                T,
-                f[selection_mask],
-                x[selection_mask],
-                y[selection_mask],
-                S[selection_mask],
-            )
+        Dico_analysis_kind[analysis_kind](
+            T,
+            f[selection_mask],
+            x[selection_mask],
+            y[selection_mask],
+            S[selection_mask],
+        )
 
         progress["value"] = int(100 * (i + 1) / (len(List_of_temp)))
 

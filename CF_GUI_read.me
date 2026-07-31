@@ -78,6 +78,25 @@ of which the temperature is between the lowest viewed temperature and the highes
 This can be usefull with superconductor to only analyse below T_c
 
 
+# Analysis + 
+
+Multiple mode of analysis exists in the eponymous menu:
+- "Simple circle fit" when there is a single lorentzian
+- "Separate"  when there are two lorentzian close to one another of whom the Frequency domain for analysis may overlap
+- "Double lorentzian" when two lorentzian are close to each others
+- "True Double lorentzian" when two lorentzian are close to each others but the formula is truer 
+
+To add a new method, multiple things need to be changed in the script :
+
+Dico_multipeaks_kind -> add an entry to the dictionary (defined at the top) in the format "name" : unused integer
+
+create a new analysis function calling your personal script near the analysis_simple function 
+taking as input (in this order) : T,f,x,y,S
+
+Dico_analysis_kind -> add an entry to the dictionary in the format:  integer used before : function_name 
+
+It should then be done!
+
 #What are the two plot that are above the result?
 
 These are the surveillance plot, they will show different steps of the circle fitting algorithm and the fit performed.
